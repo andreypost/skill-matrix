@@ -152,8 +152,12 @@ const SENIORITY_MAP: Array<[RegExp, SkillMatrix["seniority"]]> = [
 const pickTitle = (text: string) => {
   const m = text.match(/(?:title|role|position)\s*:\s*(.+)/i);
   if (m) return m[1].trim().slice(0, 80);
-  const head = text.split("\n")[0]?.trim();
-  return head && head.length > 4 && head.length < 120 ? head : "Unknown Title";
+  const head =
+    text
+      .split(/\r?\n/)
+      .find((l) => l.trim().length > 0)
+      ?.trim() ?? "";
+  return head.length > 4 && head.length < 120 ? head : "Unknown Title";
 };
 
 const inferSeniority = (text: string): SkillMatrix["seniority"] => {
@@ -166,6 +170,25 @@ const normalizePhrases = (t: string) => {
     .replace(/\bgithub\s+actions\b/gi, "github-actions")
     .replace(/\bgitlab\s+ci\b/gi, "gitlab-ci")
     .replace(/\bci\s*\/\s*cd\b/gi, "ci/cd");
+};
+
+const normalizeToken = (raw: string) => {
+  return raw
+    .toLowerCase()
+    .replace(/[.,;:!?"]+$/g, "")
+    .replace(/^react\.?js$/, "react")
+    .replace(/^next\.?js$/, "next")
+    .replace(/^vue\.?js$/, "vue")
+    .replace(/^nuxt\.?js$/, "nuxt")
+    .replace(/^angular\.?js$/, "angular")
+    .replace(/^node\.?js$/, "node")
+    .replace(/^web3\.?js$/, "web3.js")
+    .replace(/^\bjs\b$/, "javascript")
+    .replace(/^postgres(?:ql)?$/, "postgres")
+    .replace(/^psql$/, "postgres")
+    .replace(/^mongo(?:db)?$/, "mongodb")
+    .replace(/^ms\s*sql$/, "mssql")
+    .replace(/^sql\s*server$/, "mssql");
 };
 
 const bucketSkills = (tokens: string[]) => {
@@ -181,7 +204,7 @@ const bucketSkills = (tokens: string[]) => {
   };
 
   for (const raw of tokens) {
-    const k = raw.toLowerCase();
+    const k = normalizeToken(raw);
 
     if (FRONTEND.includes(k)) {
       push(out.frontend, k);
